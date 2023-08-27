@@ -7,9 +7,10 @@
 class sphere : public hittable
 {
 public:
-    sphere(point3 _center, double _radius) : center(_center), radius(_radius) {}
+    sphere(point3 _center, double _radius, shared_ptr<material> _material)
+        : center(_center), radius(_radius), mat(_material) {}
     //the overriden hit function from the base hittable class with specific sphere info
-    bool hit(const ray& r, double ray_tmin, double ray_tmax, hit_record& rec) const override {
+    bool hit(const ray& r, interval ray_t, hit_record& rec) const override {
         //ray origin to center
         vec3 oc = r.origin() - center;
         //quadratic equation coefficients
@@ -24,9 +25,9 @@ public:
 
         // Find the nearest root that lies in the acceptable range.
         auto root = (-half_b - sqrtd) / a;
-        if (root <= ray_tmin || ray_tmax <= root) {
+        if (!ray_t.surrounds(root)) {
             root = (-half_b + sqrtd) / a;
-            if (root <= ray_tmin || ray_tmax <= root)
+            if (!ray_t.surrounds(root))
                 return false;
         }
 
@@ -35,7 +36,7 @@ public:
         //checking to see if we are inside the sphere and have to change the normal
         vec3 outward_normal = (rec.p - center) / radius;
         rec.set_face_normal(r, outward_normal);
-        rec.normal = (rec.p - center) / radius;
+        rec.mat = mat;
 
         return true;
     }
@@ -43,5 +44,6 @@ private:
     //for now the sphere only has a center and a radius
     point3 center;
     double radius;
+    shared_ptr<material> mat;
 };
 #endif
